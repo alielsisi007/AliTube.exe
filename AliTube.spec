@@ -1,8 +1,11 @@
-# PyInstaller spec for AliTube (Windows onedir build).
+
+# PyInstaller spec for AliTube (Windows single-file build)
+
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_all
 
 root = Path(SPECPATH)
+
 datas = []
 binaries = []
 hiddenimports = []
@@ -14,8 +17,21 @@ for package in ("yt_dlp", "PySide6"):
     hiddenimports += pkg_hidden
 
 ffmpeg_dir = root / "installer" / "ffmpeg"
-if ffmpeg_dir.exists():
-    datas.append((str(ffmpeg_dir), "installer/ffmpeg"))
+
+if not (ffmpeg_dir / "ffmpeg.exe").exists():
+    raise FileNotFoundError("FFmpeg not found")
+
+if not (ffmpeg_dir / "ffprobe.exe").exists():
+    raise FileNotFoundError("FFprobe not found")
+
+binaries += [
+    (str(ffmpeg_dir / "ffmpeg.exe"), "installer/ffmpeg"),
+    (str(ffmpeg_dir / "ffprobe.exe"), "installer/ffmpeg"),
+]
+
+for license_file in ffmpeg_dir.glob("*"):
+    if license_file.suffix.lower() in (".txt", ".md"):
+        datas.append((str(license_file), "installer/ffmpeg"))
 
 a = Analysis(
     ["main.py"],
@@ -29,27 +45,27 @@ a = Analysis(
     excludes=["tkinter", "test", "unittest"],
     noarchive=False,
 )
+
 pyz = PYZ(a.pure)
+
 exe = EXE(
-    pyz, a.scripts, [],
-    exclude_binaries=True,
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
     name="AliTube",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(root / "assets" / "icons" / "alitube.ico") if (root / "assets" / "icons" / "alitube.ico").exists() else None,
-)
-coll = COLLECT(
-    exe, a.binaries, a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name="AliTube",
+    icon=str(root / "assets" / "icons" / "alitube.ico")
+    if (root / "assets" / "icons" / "alitube.ico").exists()
+    else None,
 )
