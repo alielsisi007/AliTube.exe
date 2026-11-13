@@ -50,5 +50,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AliTube-Windows
-          path: dist/AliTube/
+          path: dist/AliTube.exe
           if-no-files-found: error
